@@ -23,7 +23,7 @@ STOP_WORDS = {
 @router.post("/")
 def query_data(req: QueryRequest):
 
-    # 🔒 SAFETY CHECK
+    #  SAFETY CHECK
     if not is_safe(req.question):
         return {
             "answer": "Query not allowed due to safety restrictions",
@@ -31,7 +31,7 @@ def query_data(req: QueryRequest):
             "confidence": "blocked"
         }
 
-    # 🔍 RETRIEVE CONTEXT
+    #  RETRIEVE CONTEXT
     results = retrieve_context(req.question)
 
     if not results:
@@ -41,7 +41,7 @@ def query_data(req: QueryRequest):
             "confidence": "low"
         }
 
-    # 🔑 Normalize question words
+    #  Normalize question words
     question_words = {
         w for w in req.question.lower()
         .translate(str.maketrans("", "", string.punctuation))
@@ -49,7 +49,7 @@ def query_data(req: QueryRequest):
         if w not in STOP_WORDS
     }
 
-    # 🔑 Check relevance across ALL retrieved chunks
+    #  Check relevance across ALL retrieved chunks
     relevant = False
 
     for r in results:
@@ -71,7 +71,7 @@ def query_data(req: QueryRequest):
             "confidence": "low"
         }
 
-    # 🤖 GENERATE ANSWER (grounded)
+    #  GENERATE ANSWER (grounded)
     answer = generate_answer(req.question, results)
 
     return {

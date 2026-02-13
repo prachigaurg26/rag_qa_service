@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 class IngestRequest(BaseModel):
     text: str
     source: str = "unknown"
-    user_id: str = "default"   # ✅ ADDED (NO LOGIN)
+    user_id: str = "default" 
 
 
 @router.post("/ingest/")
