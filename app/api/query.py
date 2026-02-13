@@ -13,7 +13,6 @@ class QueryRequest(BaseModel):
     question: str
 
 
-# Stop words for relevance filtering
 STOP_WORDS = {
     "is", "a", "an", "the", "what", "who", "when",
     "where", "why", "how", "of", "to", "for", "in"
@@ -23,7 +22,6 @@ STOP_WORDS = {
 @router.post("/")
 def query_data(req: QueryRequest):
 
-    #  SAFETY CHECK
     if not is_safe(req.question):
         return {
             "answer": "Query not allowed due to safety restrictions",
@@ -31,7 +29,6 @@ def query_data(req: QueryRequest):
             "confidence": "blocked"
         }
 
-    #  RETRIEVE CONTEXT
     results = retrieve_context(req.question)
 
     if not results:
@@ -41,7 +38,6 @@ def query_data(req: QueryRequest):
             "confidence": "low"
         }
 
-    #  Normalize question words
     question_words = {
         w for w in req.question.lower()
         .translate(str.maketrans("", "", string.punctuation))
@@ -49,8 +45,7 @@ def query_data(req: QueryRequest):
         if w not in STOP_WORDS
     }
 
-    #  Check relevance across ALL retrieved chunks
-    relevant = False
+    relevant_results = []
 
     for r in results:
         context_words = {
@@ -60,19 +55,20 @@ def query_data(req: QueryRequest):
             if w not in STOP_WORDS
         }
 
-        if len(question_words & context_words) > 0:
-            relevant = True
-            break
+        if question_words & context_words:
+            relevant_results.append(r)
 
-    if not relevant:
+    if not relevant_results:
         return {
             "answer": "I don't know",
             "sources": [],
             "confidence": "low"
         }
 
-    #  GENERATE ANSWER (grounded)
-    answer = generate_answer(req.question, results)
+   
+    relevant_results = relevant_results[:1]
+
+    answer = generate_answer(req.question, relevant_results)
 
     return {
         "answer": answer,
@@ -81,7 +77,7 @@ def query_data(req: QueryRequest):
                 "source": r.get("source", "unknown"),
                 "preview": r.get("text", "")
             }
-            for r in results
+            for r in relevant_results
         ],
         "confidence": "grounded"
     }
